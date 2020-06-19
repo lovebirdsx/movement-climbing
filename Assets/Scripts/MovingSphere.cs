@@ -123,7 +123,9 @@ public class MovingSphere : MonoBehaviour {
 				Time.deltaTime;
 		}
 		else if (OnGround && velocity.sqrMagnitude < 0.01f) {
-			velocity += contactNormal * Vector3.Dot(gravity, contactNormal);
+			velocity +=
+				contactNormal *
+				(Vector3.Dot(gravity, contactNormal) * Time.deltaTime);
 		}
 		else {
 			velocity += gravity * Time.deltaTime;
