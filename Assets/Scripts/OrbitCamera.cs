@@ -123,17 +123,14 @@ public class OrbitCamera : MonoBehaviour {
 		Vector3 targetPoint = focus.position;
 		if (focusRadius > 0f) {
 			float distance = Vector3.Distance(targetPoint, focusPoint);
-			if (distance > focusRadius) {
-				focusPoint = Vector3.Lerp(
-					targetPoint, focusPoint, focusRadius / distance
-				);
-			}
+			float t = 1f;
 			if (distance > 0.01f && focusCentering > 0f) {
-				focusPoint = Vector3.Lerp(
-					targetPoint, focusPoint,
-					Mathf.Pow(1f - focusCentering, Time.unscaledDeltaTime)
-				);
+				t = Mathf.Pow(1f - focusCentering, Time.unscaledDeltaTime);
 			}
+			if (distance > focusRadius) {
+				t = Mathf.Min(t, focusRadius / distance);
+			}
+			focusPoint = Vector3.Lerp(targetPoint, focusPoint, t);
 		}
 		else {
 			focusPoint = targetPoint;
