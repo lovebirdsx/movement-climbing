@@ -58,8 +58,7 @@ public class MovingSphere : MonoBehaviour {
 
 	bool OnSteep => steepContactCount > 0;
 
-	bool Climbing =>
-		desiresClimbing && climbContactCount > 0 && stepsSinceLastJump > 2;
+	bool Climbing => climbContactCount > 0 && stepsSinceLastJump > 2;
 
 	int jumpPhase;
 
@@ -331,7 +330,7 @@ public class MovingSphere : MonoBehaviour {
 					}
 				}
 				if (
-					upDot >= minClimbDotProduct &&
+					desiresClimbing && upDot >= minClimbDotProduct &&
 					(climbMask & (1 << layer)) != 0
 				) {
 					climbContactCount += 1;
