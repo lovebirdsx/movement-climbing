@@ -46,6 +46,7 @@ public class MovingSphere : MonoBehaviour {
 
     Vector3 connectionWorldPosition, connectionLocalPosition;
 
+    // 自定义了对应的坐标系,可以根据当前的重力系统动态改变
     Vector3 upAxis, rightAxis, forwardAxis;
 
     bool desiredJump, desiresClimbing;
@@ -68,6 +69,7 @@ public class MovingSphere : MonoBehaviour {
 
     MeshRenderer meshRenderer;
 
+    // OnValidate没必要手动调用,引擎会确保在Awake之前调用
     void OnValidate() {
         minGroundDotProduct = Mathf.Cos(maxGroundAngle * Mathf.Deg2Rad);
         minStairsDotProduct = Mathf.Cos(maxStairsAngle * Mathf.Deg2Rad);
@@ -75,10 +77,11 @@ public class MovingSphere : MonoBehaviour {
     }
 
     void Awake() {
+        // 去掉重力影响,移动完全由脚本来控制
         body = GetComponent<Rigidbody>();
         body.useGravity = false;
+
         meshRenderer = GetComponent<MeshRenderer>();
-        OnValidate();
     }
 
     void Update() {
@@ -124,6 +127,8 @@ public class MovingSphere : MonoBehaviour {
         } else {
             velocity += gravity * Time.deltaTime;
         }
+
+        // 将RigidBody的速度设为我们控制的速度
         body.velocity = velocity;
         ClearState();
     }
@@ -141,6 +146,8 @@ public class MovingSphere : MonoBehaviour {
         stepsSinceLastGrounded += 1;
         stepsSinceLastJump += 1;
 
+        // velocity直接读取自RigidBody,这里没有直接使用body.velocity来操作,是处于性能的考虑
+        // 因为后面很多地方都要处理这个
         velocity = body.velocity;
 
         // 检查是否抓地,攀爬的时候也算
@@ -248,6 +255,8 @@ public class MovingSphere : MonoBehaviour {
 
     void AdjustVelocity() {
         float acceleration, speed;
+
+        // xAxis, zAxis为当前移动平面上的x轴,z轴方向
         Vector3 xAxis, zAxis;
         if (Climbing) {
             acceleration = maxClimbAcceleration;
@@ -266,19 +275,37 @@ public class MovingSphere : MonoBehaviour {
             xAxis = rightAxis;
             zAxis = forwardAxis;
         }
+
+        // 在斜坡上时,由于x,z轴代表的平面要和斜坡上的点相切,故而将xAxis和zAxis处理成在对应平面上的投影
         xAxis = ProjectDirectionOnPlane(xAxis, contactNormal);
         zAxis = ProjectDirectionOnPlane(zAxis, contactNormal);
 
+        // connectionVelocity代表着依附物的速度
         Vector3 relativeVelocity = velocity - connectionVelocity;
+
+        // 算出速度对应的x轴和z轴分量
         float currentX = Vector3.Dot(relativeVelocity, xAxis);
         float currentZ = Vector3.Dot(relativeVelocity, zAxis);
 
+        // 算出当前更新间隔内,速度变化的最大值
         float maxSpeedChange = acceleration * Time.deltaTime;
 
+        // playerInput.x * speed代表当前x轴需要达到的最大速度
+        // currentX 代表当前X轴上的速度
+        var inputDir = playerInput.normalized;
         float newX = Mathf.MoveTowards(currentX, playerInput.x * speed, maxSpeedChange);
         float newZ = Mathf.MoveTowards(currentZ, playerInput.y * speed, maxSpeedChange);
 
         velocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
+
+        
+        // playerInput.x * speed代表当前x轴需要达到的最大速度
+        // currentX 代表当前X轴上的速度
+        // var inputDir = playerInput.normalized;
+        // float newX = Mathf.MoveTowards(currentX, playerInput.x * speed, maxSpeedChange * Mathf.Abs(inputDir.x));
+        // float newZ = Mathf.MoveTowards(currentZ, playerInput.y * speed, maxSpeedChange * Mathf.Abs(inputDir.y));
+
+        // velocity += xAxis * (newX - currentX) + zAxis * (newZ - currentZ);
     }
 
     void Jump(Vector3 gravity) {
